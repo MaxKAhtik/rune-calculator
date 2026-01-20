@@ -21,19 +21,16 @@ public class RuneCalculatorPlugin extends Plugin
 	@Inject
 	private Client client;
 
-	@Inject
-	private RuneCalculatorConfig config;
-
 	@Override
 	protected void startUp() throws Exception
 	{
-		log.debug("Example started!");
+		log.debug("Rune Calculator started!");
 	}
 
 	@Override
 	protected void shutDown() throws Exception
 	{
-		log.debug("Example stopped!");
+		log.debug("Rune Calculator stopped!");
 	}
 
 	@Subscribe
@@ -41,13 +38,7 @@ public class RuneCalculatorPlugin extends Plugin
 	{
 		if (gameStateChanged.getGameState() == GameState.LOGGED_IN)
 		{
-			client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Example says " + config.greeting(), null);
+			client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "//TODO: get rid of this message ", null);
 		}
-	}
-
-	@Provides
-	RuneCalculatorConfig provideConfig(ConfigManager configManager)
-	{
-		return configManager.getConfig(RuneCalculatorConfig.class);
 	}
 }
