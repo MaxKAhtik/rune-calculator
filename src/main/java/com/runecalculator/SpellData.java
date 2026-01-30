@@ -3,7 +3,6 @@ package com.runecalculator;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import net.runelite.api.gameval.SpriteID;
-
 import java.util.EnumSet;
 
 @AllArgsConstructor
