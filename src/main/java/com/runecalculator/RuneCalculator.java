@@ -10,8 +10,8 @@ import javax.inject.Inject;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.ArrayList;
-import java.util.EnumSet;
+import java.awt.image.BufferedImage;
+import java.util.*;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -28,6 +28,10 @@ class RuneCalculator extends JPanel {
     private final IconTextField searchBar = new IconTextField();
     private final List<UISpellSlot> uiSpellSlots = new ArrayList<>();
     private final List<UISpellIcon> uiSpellIcons = new ArrayList<>();
+    private final JPanel selectedSpellIconsPanel;
+    private final Map<SpellData, BufferedImage> spellSpriteCache = new HashMap<>();
+    private final Map<SpellData, UISpellIcon> uiSpellIconCache = new HashMap<>();
+    private final Map<SpellData, UISpellSlot> uiSpellSlotCache = new HashMap<>();
 
     private static final EnumSet<RuneTypes> initialUsableRunes = EnumSet.of(
         RuneTypes.AIR,
@@ -77,8 +81,23 @@ class RuneCalculator extends JPanel {
         this.clientThread = clientThread;
         this.spriteManager = spriteManager;
 
-        this.usableRunes = EnumSet.copyOf(initialUsableRunes);
-        this.infiniteRuneSources = EnumSet.noneOf(RuneTypes.class);
+        usableRunes = EnumSet.copyOf(initialUsableRunes);
+        infiniteRuneSources = EnumSet.noneOf(RuneTypes.class);
+
+        setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
+
+        selectedSpellIconsPanel = new JPanel(new FlowLayout(FlowLayout.LEADING, 7, 7));
+        selectedSpellIconsPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
+
+        JPanel checkBoxArea = buildCheckBoxes();
+        add(checkBoxArea);
+
+        //build selected spells area?
+        JPanel selectedSpellsArea = buildSelectedSpellsArea();
+        add(selectedSpellsArea);
+
+        //probably put a "clear selected spells" button here too
+        //maybe this is also the runes required area?
 
         searchBar.setIcon(IconTextField.Icon.SEARCH);
         searchBar.setPreferredSize(new Dimension(PluginPanel.PANEL_WIDTH - 20, 30));
@@ -92,19 +111,6 @@ class RuneCalculator extends JPanel {
             }
         });
 
-        setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
-
-        JPanel checkBoxArea = buildCheckBoxes();
-        add(checkBoxArea);
-
-        //build selected spells area?
-        JPanel selectedSpellsArea = buildSelectedSpellsArea();
-        add(selectedSpellsArea);
-
-        //probably put a "clear selected spells" button here too
-        //maybe this is also the runes required area?
-
-        //add search bar
         add(searchBar);
 
         //then build spell slots area
@@ -113,6 +119,9 @@ class RuneCalculator extends JPanel {
 
         //then build the spell icon list
         buildSpellIcons();
+
+        // Load spell sprites only after the UISpellSlots and UISpellIcons have been created
+        loadAndSetSpellSprites();
     }
 
     private JPanel buildCheckBoxes() {
@@ -127,6 +136,9 @@ class RuneCalculator extends JPanel {
 
         JPanel checkBoxGroup2 = buildCheckBoxGroup(infiniteRuneSourcesCheckBoxes, this::adjustInfiniteRuneSourcesSet);
         uiCheckBoxesPanel.add(checkBoxGroup2);
+
+        // Visually separate the checkbox panel from following UI elements
+        uiCheckBoxesPanel.add(new JSeparator(JSeparator.HORIZONTAL));
 
         return uiCheckBoxesPanel;
     }
@@ -169,21 +181,16 @@ class RuneCalculator extends JPanel {
         JLabel selectedSpellsLabel = new JLabel("Selected spells:", SwingConstants.LEADING);
         selectedSpellsPanel.add(selectedSpellsLabel);
 
-        JPanel spellIconsPanel = new JPanel();
+        selectedSpellsPanel.add(selectedSpellIconsPanel);
 
         return selectedSpellsPanel;
     }
 
     private void buildSpellSlots() {
         for (SpellData spell : SpellData.values()) {
-            JLabel uiIcon = new JLabel();
-
-            if (spell.getSpriteID() != -1) {
-                clientThread.invokeLater(() -> spriteManager.addSpriteTo(uiIcon, spell.getSpriteID(), 0));
-            }
-
-            UISpellSlot slot = new UISpellSlot(uiIcon, spell);
+            UISpellSlot slot = new UISpellSlot(spell);
             uiSpellSlots.add(slot);
+            uiSpellSlotCache.put(spell, slot);
 
             slot.addMouseListener(new MouseAdapter() {
                 @Override
@@ -201,17 +208,53 @@ class RuneCalculator extends JPanel {
     }
 
     private void buildSpellIcons() {
-        for (UISpellSlot slot : uiSpellSlots) {
-           UISpellIcon spellIcon = new UISpellIcon(slot.getSpellIcon(), slot.getSpellData());
+        for (SpellData spell : SpellData.values()) {
+           UISpellIcon spellIcon = new UISpellIcon(spell);
            uiSpellIcons.add(spellIcon);
+           uiSpellIconCache.put(spell, spellIcon);
 
            spellIcon.addMouseListener(new MouseAdapter() {
                @Override
                public void mousePressed(MouseEvent e) {
                    toggleSpell(spellIcon.getSpellData());
+
+                   spellIcon.resetBackground();
+
+                   //TODO: remove later
+                   logger.info(debug_spellSetToString());
+
+                   calculateRunes();
+                   refreshUI();
                }
            });
         }
+    }
+
+    private void loadAndSetSpellSprites() {
+        clientThread.invokeLater(() -> {
+            for (SpellData spell : SpellData.values()) {
+                BufferedImage img = spriteManager.getSprite(spell.getSpriteID(), 0);
+
+                if (img != null) {
+                    spellSpriteCache.put(spell, img);
+                }
+            }
+
+            spellSpriteCache.forEach((spell, sprite) -> {
+                UISpellSlot slot = uiSpellSlotCache.get(spell);
+                UISpellIcon icon = uiSpellIconCache.get(spell);
+
+                SwingUtilities.invokeLater(() -> {
+                    if (slot != null) {
+                        slot.setIcon(sprite);
+                    }
+
+                    if (icon != null) {
+                        icon.setIcon(sprite);
+                    }
+                });
+            });
+        });
     }
 
     private void adjustUsableRuneSet(ActionEvent e) {
@@ -248,8 +291,12 @@ class RuneCalculator extends JPanel {
         refreshUI();
     }
 
+    private boolean isSpellSelected(SpellData spellData) {
+        return spellSet.contains(spellData);
+    }
+
     private void toggleSpell(SpellData spellData) {
-        if (spellSet.contains(spellData)) {
+        if (isSpellSelected(spellData)) {
             spellSet.remove(spellData);
         }
         else {
@@ -257,18 +304,20 @@ class RuneCalculator extends JPanel {
         }
     }
 
-    private boolean isSpellSelected(SpellData spellData) {
-        return spellSet.contains(spellData);
-    }
-
     private void updateSpellSlotsUI() {
         for (UISpellSlot slot : uiSpellSlots) {
-            slot.setSelected(spellSet.contains(slot.getSpellData()));
+            slot.setSelected(isSpellSelected(slot.getSpellData()));
         }
     }
 
     private void updateSelectedSpellIconsUI() {
-        //TODO
+        selectedSpellIconsPanel.removeAll();
+
+        for (SpellData spell : spellSet) {
+            UISpellIcon icon = uiSpellIconCache.get(spell);
+            icon.setIcon(spellSpriteCache.get(spell));
+            selectedSpellIconsPanel.add(icon);
+        }
     }
 
     private void updateRuneSetsUI() {

@@ -11,6 +11,7 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.image.BufferedImage;
 
 @Getter
 public class UISpellSlot extends JPanel {
@@ -20,12 +21,11 @@ public class UISpellSlot extends JPanel {
 
     private static final Dimension ICON_SIZE = new Dimension(32, 32);
 
-    private final JLabel spellIcon;
     private final SpellData spellData;
+    private final JLabel spellIcon = new JLabel();
     private boolean isSelected = false;
 
-    UISpellSlot(JLabel spellIcon, SpellData spellData) {
-        this.spellIcon = spellIcon;
+    UISpellSlot(SpellData spellData) {
         this.spellData = spellData;
 
         MouseListener hoverListener = new MouseAdapter() {
@@ -61,6 +61,10 @@ public class UISpellSlot extends JPanel {
 
         add(spellIcon, BorderLayout.LINE_START);
         add(uiSpellName, BorderLayout.CENTER);
+    }
+
+    public void setIcon(BufferedImage sprite) {
+        spellIcon.setIcon(new ImageIcon(sprite));
     }
 
     void setSelected(boolean selected) {

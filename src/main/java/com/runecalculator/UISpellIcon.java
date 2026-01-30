@@ -10,6 +10,7 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.image.BufferedImage;
 
 @Getter
 public class UISpellIcon extends JPanel {
@@ -20,8 +21,9 @@ public class UISpellIcon extends JPanel {
     private static final Dimension ICON_SIZE = new Dimension(32, 32);
 
     private final SpellData spellData;
+    private final JLabel spellIcon = new JLabel();
 
-    UISpellIcon(JLabel spellIcon, SpellData spellData) {
+    UISpellIcon(SpellData spellData) {
         this.spellData = spellData;
 
         MouseListener hoverListener = new MouseAdapter() {
@@ -48,5 +50,13 @@ public class UISpellIcon extends JPanel {
         setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
         add(spellIcon, BorderLayout.LINE_START);
+    }
+
+    public void setIcon(BufferedImage sprite) {
+        spellIcon.setIcon(new ImageIcon(sprite));
+    }
+
+    public void resetBackground() {
+        setBackground(ColorScheme.DARKER_GRAY_COLOR);
     }
 }
