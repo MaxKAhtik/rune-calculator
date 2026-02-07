@@ -1,6 +1,7 @@
 package com.runecalculator;
 
 import lombok.Getter;
+
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.components.shadowlabel.JShadowedLabel;
 
@@ -14,7 +15,7 @@ import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 
 @Getter
-public class UISpellSlot extends JPanel {
+public class UISpellSlot extends JPanel implements SpellSource {
     private static final Border BORDER = new CompoundBorder(
         BorderFactory.createMatteBorder(0, 4, 0, 0, (ColorScheme.DARK_GRAY_COLOR).darker()),
         BorderFactory.createEmptyBorder(7, 12, 7, 7));

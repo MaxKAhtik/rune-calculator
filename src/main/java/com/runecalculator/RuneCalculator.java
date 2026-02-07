@@ -1,11 +1,15 @@
 package com.runecalculator;
 
+import lombok.extern.slf4j.Slf4j;
+
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.ui.components.IconTextField;
+import net.runelite.client.util.SwingUtil;
+
 import javax.inject.Inject;
 import javax.swing.*;
 import java.awt.*;
@@ -13,12 +17,9 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.util.*;
 import java.util.List;
-import java.util.logging.Logger;
 
+@Slf4j
 class RuneCalculator extends JPanel {
-    //TODO: remove later
-    private static final Logger logger = Logger.getLogger(RuneCalculator.class.getName());
-
     private final ClientThread clientThread;
     private final SpriteManager spriteManager;
 
@@ -27,11 +28,17 @@ class RuneCalculator extends JPanel {
     private final EnumSet<RuneTypes> infiniteRuneSources;
     private final IconTextField searchBar = new IconTextField();
     private final List<UISpellSlot> uiSpellSlots = new ArrayList<>();
-    private final List<UISpellIcon> uiSpellIcons = new ArrayList<>();
-    private final JPanel selectedSpellIconsPanel;
-    private final Map<SpellData, BufferedImage> spellSpriteCache = new HashMap<>();
-    private final Map<SpellData, UISpellIcon> uiSpellIconCache = new HashMap<>();
-    private final Map<SpellData, UISpellSlot> uiSpellSlotCache = new HashMap<>();
+    //TODO: check if I actually need this
+    //private final List<UISpellIcon> uiSpellIcons = new ArrayList<>();
+    private final JButton clearButton = createXButton();
+    private static final int iconBufferSize = 3;
+    private static final int spellIconGridColumns = (int) Math.floor(((float) PluginPanel.PANEL_WIDTH - 20)/(UISpellIcon.ICON_SIZE + iconBufferSize));
+    private final JPanel selectedSpellIconsPanel = new JPanel(new GridLayout(0, spellIconGridColumns, iconBufferSize, iconBufferSize));;
+    //TODO: remove if i don't actually need this
+    //private final Map<SpellData, BufferedImage> spellSpriteMap = new HashMap<>();
+    private final Set<SpellData> pendingSprites = EnumSet.allOf(SpellData.class);
+    private final Map<SpellData, UISpellIcon> uiSpellIconMap = new HashMap<>();
+    private final Map<SpellData, UISpellSlot> uiSpellSlotMap = new HashMap<>();
 
     private static final EnumSet<RuneTypes> initialUsableRunes = EnumSet.of(
         RuneTypes.AIR,
@@ -63,13 +70,13 @@ class RuneCalculator extends JPanel {
         }
     }
 
-    private static final List<CheckBoxData> optionalUsableRuneCheckBoxes = List.of(
+    private static final List<CheckBoxData> optionalRuneData = List.of(
         new CheckBoxData("Include elemental combination runes", true, RuneTypes.MIST, RuneTypes.DUST, RuneTypes.MUD, RuneTypes.SMOKE, RuneTypes.STEAM, RuneTypes.LAVA),
         new CheckBoxData("Include aether runes", true, RuneTypes.AETHER),
-        new CheckBoxData("Use sunfire runes", true, RuneTypes.SUNFIRE)
+        new CheckBoxData("Use sunfire runes", false, RuneTypes.SUNFIRE)
     );
 
-    private static final List<CheckBoxData> infiniteRuneSourcesCheckBoxes = List.of(
+    private static final List<CheckBoxData> infiniteRuneData = List.of(
         new CheckBoxData("Infinite source of air runes", false, RuneTypes.AIR),
         new CheckBoxData("Infinite source of water runes", false, RuneTypes.WATER),
         new CheckBoxData("Infinite source of earth runes", false, RuneTypes.EARTH),
@@ -86,41 +93,21 @@ class RuneCalculator extends JPanel {
 
         setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
 
-        selectedSpellIconsPanel = new JPanel(new FlowLayout(FlowLayout.LEADING, 7, 7));
-        selectedSpellIconsPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
-
         JPanel checkBoxArea = buildCheckBoxes();
         add(checkBoxArea);
 
-        //build selected spells area?
         JPanel selectedSpellsArea = buildSelectedSpellsArea();
         add(selectedSpellsArea);
 
-        //probably put a "clear selected spells" button here too
-        //maybe this is also the runes required area?
+        //TODO: buildNeededRunesArea();
 
-        searchBar.setIcon(IconTextField.Icon.SEARCH);
-        searchBar.setPreferredSize(new Dimension(PluginPanel.PANEL_WIDTH - 20, 30));
-        searchBar.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-        searchBar.setHoverBackgroundColor(ColorScheme.DARK_GRAY_HOVER_COLOR);
-        searchBar.addClearListener(this::onSearch);
-        searchBar.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyTyped(KeyEvent e) {
-                onSearch();
-            }
-        });
-
+        buildSearchBar();
         add(searchBar);
 
-        //then build spell slots area
-        buildSpellSlots();
+        buildSpellUIElements();
         uiSpellSlots.forEach(this::add);
 
-        //then build the spell icon list
-        buildSpellIcons();
-
-        // Load spell sprites only after the UISpellSlots and UISpellIcons have been created
+        // Load spell sprites only after the Spell UI elements have been created
         loadAndSetSpellSprites();
     }
 
@@ -128,17 +115,14 @@ class RuneCalculator extends JPanel {
         JPanel uiCheckBoxesPanel = new JPanel();
         uiCheckBoxesPanel.setLayout(new BoxLayout(uiCheckBoxesPanel, BoxLayout.PAGE_AXIS));
 
-        JPanel checkBoxGroup1 = buildCheckBoxGroup(optionalUsableRuneCheckBoxes, this::adjustUsableRuneSet);
+        JPanel checkBoxGroup1 = buildCheckBoxGroup(optionalRuneData, this::adjustUsableRuneSet);
         uiCheckBoxesPanel.add(checkBoxGroup1);
 
         // Visually separate the checkbox groups
         uiCheckBoxesPanel.add(new JSeparator(JSeparator.HORIZONTAL));
 
-        JPanel checkBoxGroup2 = buildCheckBoxGroup(infiniteRuneSourcesCheckBoxes, this::adjustInfiniteRuneSourcesSet);
+        JPanel checkBoxGroup2 = buildCheckBoxGroup(infiniteRuneData, this::adjustInfiniteRuneSourcesSet);
         uiCheckBoxesPanel.add(checkBoxGroup2);
-
-        // Visually separate the checkbox panel from following UI elements
-        uiCheckBoxesPanel.add(new JSeparator(JSeparator.HORIZONTAL));
 
         return uiCheckBoxesPanel;
     }
@@ -175,85 +159,141 @@ class RuneCalculator extends JPanel {
     }
 
     private JPanel buildSelectedSpellsArea() {
-        JPanel selectedSpellsPanel = new JPanel();
-        selectedSpellsPanel.setLayout(new BoxLayout(selectedSpellsPanel, BoxLayout.PAGE_AXIS));
+        JPanel selectedSpellsPanel = new JPanel(new BorderLayout());
+        selectedSpellsPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        selectedSpellsPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
-        JLabel selectedSpellsLabel = new JLabel("Selected spells:", SwingConstants.LEADING);
-        selectedSpellsPanel.add(selectedSpellsLabel);
+        JPanel selectedSpellsHeader = new JPanel(new BorderLayout());
+        selectedSpellsHeader.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
-        selectedSpellsPanel.add(selectedSpellIconsPanel);
+        JLabel selectedSpellsLabel = new JLabel("Selected spells:");
+        selectedSpellsLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        selectedSpellsHeader.add(selectedSpellsLabel, BorderLayout.WEST);
+
+        clearButton.setText("×");
+        clearButton.addActionListener(e -> {
+
+            // Deselect all currently-selected spells
+            for (SpellData spell : spellSet) {
+                toggleSpell(spell);
+            }
+
+            calculateRunes();
+            refreshUI();
+        });
+
+        selectedSpellsHeader.add(clearButton, BorderLayout.EAST);
+
+        selectedSpellsPanel.add(selectedSpellsHeader, BorderLayout.NORTH);
+
+        selectedSpellIconsPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        selectedSpellIconsPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        selectedSpellsPanel.add(selectedSpellIconsPanel, BorderLayout.CENTER);
 
         return selectedSpellsPanel;
     }
 
-    private void buildSpellSlots() {
+    private JButton createXButton()
+    {
+        JButton xButton = new JButton();
+        xButton.setPreferredSize(new Dimension(30, 0));
+        xButton.setFont(FontManager.getRunescapeBoldFont());
+        xButton.setBorder(null);
+        xButton.setRolloverEnabled(true);
+        SwingUtil.removeButtonDecorations(xButton);
+        xButton.setForeground(ColorScheme.PROGRESS_ERROR_COLOR);
+
+        xButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent mouseEvent) {
+                xButton.setForeground(Color.PINK);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent mouseEvent) {
+                xButton.setForeground(ColorScheme.PROGRESS_ERROR_COLOR);
+            }
+        });
+
+        xButton.setVisible(false);
+
+        return xButton;
+    }
+
+    private void buildSearchBar() {
+        searchBar.setIcon(IconTextField.Icon.SEARCH);
+        searchBar.setPreferredSize(new Dimension(PluginPanel.PANEL_WIDTH - 20, 30));
+        searchBar.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        searchBar.setHoverBackgroundColor(ColorScheme.DARK_GRAY_HOVER_COLOR);
+        searchBar.addClearListener(this::onSearch);
+        searchBar.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+                onSearch();
+            }
+        });
+    }
+
+    private void buildSpellUIElements() {
         for (SpellData spell : SpellData.values()) {
             UISpellSlot slot = new UISpellSlot(spell);
-            uiSpellSlots.add(slot);
-            uiSpellSlotCache.put(spell, slot);
 
-            slot.addMouseListener(new MouseAdapter() {
+            // Maintain an ordered list of UISpellSlots for the search display
+            uiSpellSlots.add(slot);
+
+            uiSpellSlotMap.put(spell, slot);
+
+            UISpellIcon spellIcon = new UISpellIcon(spell);
+            uiSpellIconMap.put(spell, spellIcon);
+
+            MouseListener adjustSpellSet = new MouseAdapter() {
                 @Override
                 public void mousePressed(MouseEvent e) {
-                    toggleSpell(slot.getSpellData());
+                    SpellSource src = (SpellSource) e.getSource();
+                    toggleSpell(src.getSpellData());
 
                     //TODO: remove later
-                    logger.info(debug_spellSetToString());
+                    log.info(debug_spellSetToString());
 
                     calculateRunes();
                     refreshUI();
                 }
-            });
-        }
-    }
+            };
 
-    private void buildSpellIcons() {
-        for (SpellData spell : SpellData.values()) {
-           UISpellIcon spellIcon = new UISpellIcon(spell);
-           uiSpellIcons.add(spellIcon);
-           uiSpellIconCache.put(spell, spellIcon);
-
-           spellIcon.addMouseListener(new MouseAdapter() {
-               @Override
-               public void mousePressed(MouseEvent e) {
-                   toggleSpell(spellIcon.getSpellData());
-
-                   spellIcon.resetBackground();
-
-                   //TODO: remove later
-                   logger.info(debug_spellSetToString());
-
-                   calculateRunes();
-                   refreshUI();
-               }
-           });
+            slot.addMouseListener(adjustSpellSet);
+            spellIcon.addMouseListener(adjustSpellSet);
         }
     }
 
     private void loadAndSetSpellSprites() {
         clientThread.invokeLater(() -> {
-            for (SpellData spell : SpellData.values()) {
+            Iterator<SpellData> it = pendingSprites.iterator();
+
+            while (it.hasNext()) {
+                SpellData spell = it.next();
+
                 BufferedImage img = spriteManager.getSprite(spell.getSpriteID(), 0);
 
-                if (img != null) {
-                    spellSpriteCache.put(spell, img);
+                if (img == null) {
+                    // Ignore the failed sprite load for now
+                    continue;
                 }
-            }
 
-            spellSpriteCache.forEach((spell, sprite) -> {
-                UISpellSlot slot = uiSpellSlotCache.get(spell);
-                UISpellIcon icon = uiSpellIconCache.get(spell);
+                UISpellSlot slot = uiSpellSlotMap.get(spell);
+                UISpellIcon icon = uiSpellIconMap.get(spell);
 
                 SwingUtilities.invokeLater(() -> {
                     if (slot != null) {
-                        slot.setIcon(sprite);
+                        slot.setIcon(img);
                     }
 
                     if (icon != null) {
-                        icon.setIcon(sprite);
+                        icon.setIcon(img);
                     }
                 });
-            });
+
+                it.remove();
+            }
         });
     }
 
@@ -314,10 +354,12 @@ class RuneCalculator extends JPanel {
         selectedSpellIconsPanel.removeAll();
 
         for (SpellData spell : spellSet) {
-            UISpellIcon icon = uiSpellIconCache.get(spell);
-            icon.setIcon(spellSpriteCache.get(spell));
+            UISpellIcon icon = uiSpellIconMap.get(spell);
+            icon.resetBackground();
             selectedSpellIconsPanel.add(icon);
         }
+
+        clearButton.setVisible(!spellSet.isEmpty());
     }
 
     private void updateRuneSetsUI() {
@@ -325,6 +367,10 @@ class RuneCalculator extends JPanel {
     }
 
     private void refreshUI() {
+        if (!pendingSprites.isEmpty()) {
+            loadAndSetSpellSprites();
+        }
+
         updateSpellSlotsUI();
         updateSelectedSpellIconsUI();
         updateRuneSetsUI();
@@ -341,12 +387,10 @@ class RuneCalculator extends JPanel {
     {
         uiSpellSlots.forEach(slot ->
         {
-            if (spellSlotContainsText(slot, searchBar.getText()))
-            {
+            if (spellSlotContainsText(slot, searchBar.getText())) {
                 super.add(slot);
             }
-            else
-            {
+            else {
                 super.remove(slot);
             }
 
@@ -364,6 +408,7 @@ class RuneCalculator extends JPanel {
         StringBuilder debugMessage = new StringBuilder();
         for (SpellData spell : spellSet) {
             debugMessage.append(spell.getSpellName());
+            debugMessage.append(", ");
         }
         return debugMessage.toString();
     }
