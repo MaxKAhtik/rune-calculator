@@ -231,6 +231,7 @@ class RuneCalculator extends JPanel {
         selectedSpellsScroll.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         selectedSpellsScroll.getViewport().setBackground(ColorScheme.DARKER_GRAY_COLOR);
         selectedSpellsScroll.setPreferredSize(new Dimension(0, SCROLL_HEIGHT));
+        selectedSpellsScroll.addMouseWheelListener(this::forwardScrollWhenNoScrollbar);
 
         selectedSpellsPanel.add(selectedSpellsScroll, BorderLayout.CENTER);
 
@@ -281,6 +282,7 @@ class RuneCalculator extends JPanel {
         neededRunesScroll.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         neededRunesScroll.getViewport().setBackground(ColorScheme.DARKER_GRAY_COLOR);
         neededRunesScroll.setPreferredSize(new Dimension(0, (int) (SCROLL_HEIGHT * 1.5)));
+        neededRunesScroll.addMouseWheelListener(this::forwardScrollWhenNoScrollbar);
 
         neededRunesPanel.add(neededRunesScroll, BorderLayout.CENTER);
 
@@ -416,6 +418,17 @@ class RuneCalculator extends JPanel {
         refreshUI();
     }
 
+    private void forwardScrollWhenNoScrollbar(MouseWheelEvent e) {
+        JScrollPane scrollPane = (JScrollPane) e.getSource();
+        JScrollBar scrollBar = scrollPane.getVerticalScrollBar();
+        boolean scrollable = scrollBar.isVisible() && (scrollBar.getMaximum() - scrollBar.getVisibleAmount() > 0);
+
+        if (!scrollable) {
+            // Let the parent container handle the scroll
+           scrollPane.getParent().dispatchEvent(e);
+        }
+    }
+
     private boolean isSpellSelected(SpellData spellData) {
         return spellSet.contains(spellData);
     }
@@ -522,7 +535,7 @@ class RuneCalculator extends JPanel {
         });
     }
 
-    private static boolean spellSlotContainsText(UISpellSlot slot, String text)
+    private boolean spellSlotContainsText(UISpellSlot slot, String text)
     {
         return slot.getSpellData().getSpellName().toLowerCase().contains(text.toLowerCase());
     }

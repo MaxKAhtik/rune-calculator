@@ -25,4 +25,9 @@ public enum RuneTypes {
     SOUL,
     WRATH
     ;
+
+    @Override
+    public String toString() {
+        return this.name().isEmpty() ? this.name() : this.name().substring(0, 1).toUpperCase() + this.name().substring(1).toLowerCase();
+    }
 }
