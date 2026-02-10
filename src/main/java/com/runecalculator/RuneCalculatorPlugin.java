@@ -13,7 +13,6 @@ import net.runelite.client.util.ImageUtil;
 
 import java.awt.image.BufferedImage;
 
-
 @Slf4j
 @PluginDescriptor(
 	name = "Rune Calculator",

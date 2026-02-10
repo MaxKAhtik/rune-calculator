@@ -21,7 +21,8 @@ public enum SpellData {
     ENCHANT_SAPPHIRE_JEWELLERY("Enchant Sapphire Jewellery", SpriteID.Magicon.LVL_1_ENCHANT, SpellRunes.ENCHANT_SAPPHIRE_JEWELRY),
     EARTH_STRIKE("Earth Strike", SpriteID.Magicon.EARTH_STRIKE, SpellRunes.EARTH_STRIKE),
     WEAKEN("Weaken", SpriteID.Magicon.WEAKEN, SpellRunes.WEAKEN),
-    FIRE_STRIKE("Fire Strike", SpriteID.Magicon.FIRE_STRIKE, SpellRunes.FIRE_STRIKE)
+    FIRE_STRIKE("Fire Strike", SpriteID.Magicon.FIRE_STRIKE, SpellRunes.FIRE_STRIKE),
+    ENCHANT_JADE_BOLT("Enchant Jade Bolt", SpriteID.Magicon2.ENCHANT_CROSSBOW_BOLT, SpellRunes.ENCHANT_JADE_BOLT)
     ;
 
     private final String spellName;
@@ -39,7 +40,8 @@ public enum SpellData {
         ENCHANT_SAPPHIRE_JEWELRY(WATER, COSMIC),
         EARTH_STRIKE(AIR, EARTH, MIND),
         WEAKEN(EARTH, WATER, BODY),
-        FIRE_STRIKE(AIR, FIRE, MIND)
+        FIRE_STRIKE(AIR, FIRE, MIND),
+        ENCHANT_JADE_BOLT(EARTH, COSMIC)
         ;
 
         private final EnumSet<RuneTypes> runes;

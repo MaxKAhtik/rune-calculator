@@ -15,9 +15,7 @@ import java.awt.image.BufferedImage;
 
 @Getter
 public class UISpellIcon extends JPanel implements SpellSource {
-    private static final Border BORDER = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
-
-    public static final int ICON_SIZE = 24;
+    public static final int ICON_SIZE = 32;
     private static final Dimension ICON_DIMENSION = new Dimension(ICON_SIZE, ICON_SIZE);
 
     private final SpellData spellData;
@@ -26,36 +24,39 @@ public class UISpellIcon extends JPanel implements SpellSource {
     UISpellIcon(SpellData spellData) {
         this.spellData = spellData;
 
+        //TODO: remove this and the commented stuff below too
+        /*
         MouseListener hoverListener = new MouseAdapter() {
             @Override
-            public void mouseEntered(MouseEvent mouseEvent) {
-                setBackground(ColorScheme.DARK_GRAY_HOVER_COLOR);
-            }
+            public void mouseEntered(MouseEvent mouseEvent) { setBackground(ColorScheme.DARK_GRAY_HOVER_COLOR); }
 
             @Override
-            public void mouseExited(MouseEvent mouseEvent) {
-                setBackground(ColorScheme.DARK_GRAY_COLOR);
-            }
+            public void mouseExited(MouseEvent mouseEvent) { setBackground(ColorScheme.DARK_GRAY_COLOR); }
         };
 
         addMouseListener(hoverListener);
+         */
 
-        spellIcon.setMinimumSize(ICON_DIMENSION);
-        spellIcon.setMaximumSize(ICON_DIMENSION);
-        spellIcon.setPreferredSize(ICON_DIMENSION);
+        this.setMinimumSize(ICON_DIMENSION);
+        this.setMaximumSize(ICON_DIMENSION);
+        this.setPreferredSize(ICON_DIMENSION);
+
         spellIcon.setHorizontalAlignment(JLabel.CENTER);
 
-        setBorder(BORDER);
         setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-        add(spellIcon, BorderLayout.LINE_START);
+        add(spellIcon);//, BorderLayout.LINE_START);
+
+        setToolTipText(this.spellData.getSpellName());
     }
 
     public void setIcon(BufferedImage sprite) {
         spellIcon.setIcon(new ImageIcon(sprite));
     }
 
+    //TODO: remove
+    /*
     public void resetBackground() {
         setBackground(ColorScheme.DARK_GRAY_COLOR);
-    }
+    }*/
 }
