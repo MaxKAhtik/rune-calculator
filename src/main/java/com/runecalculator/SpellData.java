@@ -9,7 +9,8 @@ import java.util.EnumSet;
 import static com.runecalculator.RuneTypes.*;
 
 @Getter
-public enum SpellData {
+public enum SpellData
+{
     WIND_STRIKE("Wind Strike", SpriteID.Magicon.WIND_STRIKE, AIR, MIND),
     CONFUSE("Confuse", SpriteID.Magicon.CONFUSE, WATER, EARTH, BODY),
     ENCHANT_OPAL_BOLT("Enchant Opal Bolt", SpriteID.Magicon2.ENCHANT_CROSSBOW_BOLT, AIR, COSMIC),
@@ -27,7 +28,8 @@ public enum SpellData {
     private final int spriteID;
     private final EnumSet<RuneTypes> runes;
 
-    SpellData(String name, int id, RuneTypes... runes) {
+    SpellData(String name, int id, RuneTypes... runes)
+    {
         this.spellName = name;
         this.spriteID = id;
         this.runes = EnumSet.of(runes[0], runes);

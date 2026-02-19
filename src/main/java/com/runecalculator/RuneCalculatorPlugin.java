@@ -21,7 +21,8 @@ import java.awt.image.BufferedImage;
 	enabledByDefault = false
 )
 
-public class RuneCalculatorPlugin extends Plugin {
+public class RuneCalculatorPlugin extends Plugin
+{
 	@Inject
 	private Client client;
 
@@ -34,7 +35,8 @@ public class RuneCalculatorPlugin extends Plugin {
 	private NavigationButton uiNavigationButton;
 
 	@Override
-	protected void startUp() throws Exception {
+	protected void startUp()
+	{
 		final BufferedImage icon = ImageUtil.loadImageResource(getClass(), "icon.png");
 
 		uiNavigationButton = NavigationButton.builder()
@@ -48,7 +50,8 @@ public class RuneCalculatorPlugin extends Plugin {
 	}
 
 	@Override
-	protected void shutDown() throws Exception {
+	protected void shutDown()
+	{
 		clientToolbar.removeNavigation(uiNavigationButton);
 	}
 }

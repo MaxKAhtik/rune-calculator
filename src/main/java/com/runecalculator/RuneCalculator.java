@@ -10,7 +10,8 @@ import java.util.List;
 import static com.runecalculator.RuneTypes.*;
 
 @Slf4j
-class RuneCalculator extends JPanel {
+class RuneCalculator extends JPanel
+{
     private static final EnumSet<RuneTypes> INITIAL_USABLE_RUNES = EnumSet.of(
         AIR,
         MIND,
@@ -39,88 +40,108 @@ class RuneCalculator extends JPanel {
     private final List<EnumSet<RuneTypes>> runeSets = new ArrayList<>();
 
     @Inject
-    RuneCalculator() {
+    RuneCalculator()
+    {
         usableRunes = EnumSet.copyOf(INITIAL_USABLE_RUNES);
         infiniteRuneSources = EnumSet.noneOf(RuneTypes.class);
     }
 
-    public EnumSet<SpellData> getSpellSet() {
+    public EnumSet<SpellData> getSpellSet()
+    {
         return spellSet;
     }
 
-    public List<EnumSet<RuneTypes>> getRuneSets() {
+    public List<EnumSet<RuneTypes>> getRuneSets()
+    {
         return runeSets;
     }
 
-    public void addUsableRunes(EnumSet<RuneTypes> runes) {
+    public void addUsableRunes(EnumSet<RuneTypes> runes)
+    {
         usableRunes.addAll(runes);
         calculateRunes();
     }
 
-    public void removeUsableRunes(EnumSet<RuneTypes> runes) {
+    public void removeUsableRunes(EnumSet<RuneTypes> runes)
+    {
         usableRunes.removeAll(runes);
         calculateRunes();
     }
 
-    public void addInfiniteRuneSources(EnumSet<RuneTypes> runes) {
+    public void addInfiniteRuneSources(EnumSet<RuneTypes> runes)
+    {
         infiniteRuneSources.addAll(runes);
         calculateRunes();
     }
 
-    public void removeInfiniteRuneSources(EnumSet<RuneTypes> runes) {
+    public void removeInfiniteRuneSources(EnumSet<RuneTypes> runes)
+    {
         infiniteRuneSources.removeAll(runes);
         calculateRunes();
     }
 
-    public void clearSelectedSpells() {
-        for (SpellData spell : spellSet) {
+    public void clearSelectedSpells()
+    {
+        for (SpellData spell : spellSet)
+        {
             toggleSpellNoCalculate(spell);
         }
         calculateRunes();
     }
 
-    public void toggleSpell(SpellData spellData) {
+    public void toggleSpell(SpellData spellData)
+    {
         toggleSpellNoCalculate(spellData);
         calculateRunes();
     }
 
-    private void toggleSpellNoCalculate(SpellData spellData) {
-        if (isSpellSelected(spellData)) {
+    private void toggleSpellNoCalculate(SpellData spellData)
+    {
+        if (isSpellSelected(spellData))
+        {
             spellSet.remove(spellData);
         }
-        else {
+        else
+        {
             spellSet.add(spellData);
         }
     }
 
-    public boolean isSpellSelected(SpellData spellData) {
+    public boolean isSpellSelected(SpellData spellData)
+    {
         return spellSet.contains(spellData);
     }
 
-    private void calculateRunes() {
+    private void calculateRunes()
+    {
         runeSets.clear();
 
         EnumSet<RuneTypes> requiredRunes = EnumSet.noneOf(RuneTypes.class);
-        for (SpellData spell : spellSet) {
+        for (SpellData spell : spellSet)
+        {
             requiredRunes.addAll(spell.getRunes());
         }
 
-        if (requiredRunes.isEmpty()) {
+        if (requiredRunes.isEmpty())
+        {
             return;
         }
 
-        if (usableRunes.contains(SUNFIRE) && requiredRunes.contains(FIRE)) {
+        if (usableRunes.contains(SUNFIRE) && requiredRunes.contains(FIRE))
+        {
             requiredRunes.add(SUNFIRE);
             requiredRunes.remove(FIRE);
         }
 
-        if (usableRunes.contains(AETHER) && requiredRunes.contains(COSMIC) && requiredRunes.contains(SOUL)) {
+        if (usableRunes.contains(AETHER) && requiredRunes.contains(COSMIC) && requiredRunes.contains(SOUL))
+        {
             requiredRunes.add(AETHER);
             requiredRunes.remove(COSMIC);
             requiredRunes.remove(SOUL);
         }
 
-        for (RuneTypes rune : infiniteRuneSources) {
+        for (RuneTypes rune : infiniteRuneSources)
+        {
             requiredRunes.remove(rune);
         }
 
@@ -129,25 +150,29 @@ class RuneCalculator extends JPanel {
         requiredElementalRunes.retainAll(elementalRunes);
 
         // If any elemental combination rune (e.g. MIST) is in usableRunes, they all are
-        if (usableRunes.contains(MIST) && !requiredElementalRunes.isEmpty()) {
+        if (usableRunes.contains(MIST) && !requiredElementalRunes.isEmpty())
+        {
             EnumSet<RuneTypes> maskedRequiredRunes = EnumSet.copyOf(requiredRunes);
             maskedRequiredRunes.removeAll(elementalRunes);
 
             List<EnumSet<RuneTypes>> requiredComboRunes = calculateComboRunes(requiredElementalRunes);
 
-            for (EnumSet<RuneTypes> elementalOptions : requiredComboRunes) {
+            for (EnumSet<RuneTypes> elementalOptions : requiredComboRunes)
+            {
                 EnumSet<RuneTypes> combinedSet = EnumSet.copyOf(maskedRequiredRunes);
                 combinedSet.addAll(elementalOptions);
                 runeSets.add(combinedSet);
             }
         }
-        else {
+        else
+        {
             runeSets.add(requiredRunes);
         }
     }
 
     // Brute force the optimal cover from the 2^10 possibilities
-    private List<EnumSet<RuneTypes>> calculateComboRunes(EnumSet<RuneTypes> requiredElementalRunes) {
+    private List<EnumSet<RuneTypes>> calculateComboRunes(EnumSet<RuneTypes> requiredElementalRunes)
+    {
         int requiredBits = toBits(requiredElementalRunes);
 
         List<EnumSet<RuneTypes>> optimalCovers = new ArrayList<>();
@@ -155,7 +180,8 @@ class RuneCalculator extends JPanel {
         int numStates = 1 << ELEMENTAL_OPTIONS.length;
 
         // Enumerate all possible covers
-        for (int state = 0; state < numStates; state++) {
+        for (int state = 0; state < numStates; state++)
+        {
             int union = 0;
             int count = 0;
             int sumOfContributions = 0;
@@ -164,8 +190,10 @@ class RuneCalculator extends JPanel {
             // An efficient cover only uses combination runes when they reduce the cardinality of the cover
             boolean efficientCover = true;
 
-            for (int i = 0; i < ELEMENTAL_OPTIONS.length; i++) {
-                if ((state & (1 << i)) != 0) {
+            for (int i = 0; i < ELEMENTAL_OPTIONS.length; i++)
+            {
+                if ((state & (1 << i)) != 0)
+                {
                     int optionMask = ELEMENTAL_OPTIONS[i].getMask();
                     union |= optionMask;
                     count++;
@@ -177,26 +205,31 @@ class RuneCalculator extends JPanel {
 
                     boolean isComboRune = Integer.bitCount(optionMask) > 1;
 
-                    if (isComboRune && numContributed < 2) {
+                    if (isComboRune && numContributed < 2)
+                    {
                         efficientCover = false;
                         break;
                     }
                 }
             }
 
-            if (!efficientCover) {
+            if (!efficientCover)
+            {
                 continue;
             }
 
             int requiredContributions = Integer.bitCount(requiredBits);
 
-            if ((union & requiredBits) == requiredBits && sumOfContributions == requiredContributions) {
-                if (count < optimalSize) {
+            if ((union & requiredBits) == requiredBits && sumOfContributions == requiredContributions)
+            {
+                if (count < optimalSize)
+                {
                     optimalSize = count;
                     optimalCovers.clear();
                     optimalCovers.add(cover);
                 }
-                else if (count == optimalSize) {
+                else if (count == optimalSize)
+                {
                     optimalCovers.add(cover);
                 }
             }
@@ -205,9 +238,11 @@ class RuneCalculator extends JPanel {
         return optimalCovers;
     }
 
-    private int toBits(EnumSet<RuneTypes> runeSet) {
+    private int toBits(EnumSet<RuneTypes> runeSet)
+    {
         int bits = 0;
-        for (RuneTypes rune : runeSet) {
+        for (RuneTypes rune : runeSet)
+        {
             bits += rune.getMask();
         }
         return bits;

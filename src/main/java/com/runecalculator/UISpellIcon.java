@@ -9,14 +9,16 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 
 @Getter
-public class UISpellIcon extends JPanel implements SpellSource {
+public class UISpellIcon extends JPanel implements SpellSource
+{
     public static final int ICON_SIZE = 32;
     private static final Dimension ICON_DIMENSION = new Dimension(ICON_SIZE, ICON_SIZE);
 
     private final SpellData spellData;
     private final JLabel spellIcon = new JLabel();
 
-    UISpellIcon(SpellData spellData) {
+    UISpellIcon(SpellData spellData)
+    {
         this.spellData = spellData;
 
         this.setMinimumSize(ICON_DIMENSION);

@@ -1,6 +1,7 @@
 package com.runecalculator;
 
-public enum Element {
+public enum Element
+{
     AIR(1),
     WATER(1 << 1),
     EARTH(1 << 2),

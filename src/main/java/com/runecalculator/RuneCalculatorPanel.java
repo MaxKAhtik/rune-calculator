@@ -22,7 +22,8 @@ import java.util.List;
 import static com.runecalculator.RuneTypes.*;
 import static javax.swing.ScrollPaneConstants.*;
 
-class RuneCalculatorPanel extends PluginPanel {
+class RuneCalculatorPanel extends PluginPanel
+{
     private static final int ICON_BUFFER_SIZE = 3;
     private static final int GRID_COLUMNS = (int) Math.floor(((float) PluginPanel.PANEL_WIDTH - 20)/(UISpellIcon.ICON_SIZE + ICON_BUFFER_SIZE));
     private static final int BASE_SCROLL_ROWS_VISIBLE = 2;
@@ -46,12 +47,14 @@ class RuneCalculatorPanel extends PluginPanel {
     private final IconTextField searchBar = new IconTextField();
     private final List<UISpellSlot> uiSpellSlots = new ArrayList<>();
 
-    private static final class CheckBoxData {
+    private static final class CheckBoxData
+    {
         final String label;
         final boolean initialState;
         final EnumSet<RuneTypes> runes;
 
-        CheckBoxData(String label, boolean initialState, RuneTypes... runes) {
+        CheckBoxData(String label, boolean initialState, RuneTypes... runes)
+        {
             this.label = label;
             this.initialState =  initialState;
             this.runes = EnumSet.of(runes[0], runes);
@@ -72,7 +75,8 @@ class RuneCalculatorPanel extends PluginPanel {
     );
 
     @Inject
-    RuneCalculatorPanel(RuneCalculator calculator, ClientThread clientThread, SpriteManager spriteManager, ItemManager itemManager) {
+    RuneCalculatorPanel(RuneCalculator calculator, ClientThread clientThread, SpriteManager spriteManager, ItemManager itemManager)
+    {
         super();
         this.calc = calculator;
         this.clientThread = clientThread;
@@ -104,7 +108,8 @@ class RuneCalculatorPanel extends PluginPanel {
         loadAndSetSpellSprites();
     }
 
-    private JPanel buildCheckBoxes() {
+    private JPanel buildCheckBoxes()
+    {
         JPanel uiCheckBoxesPanel = new JPanel();
         uiCheckBoxesPanel.setLayout(new BoxLayout(uiCheckBoxesPanel, BoxLayout.PAGE_AXIS));
 
@@ -120,11 +125,13 @@ class RuneCalculatorPanel extends PluginPanel {
         return uiCheckBoxesPanel;
     }
 
-    private JPanel buildCheckBoxGroup(List<CheckBoxData> checkBoxDataList, ActionListener listener) {
+    private JPanel buildCheckBoxGroup(List<CheckBoxData> checkBoxDataList, ActionListener listener)
+    {
         JPanel uiCheckBoxGroupPanel = new JPanel();
         uiCheckBoxGroupPanel.setLayout(new BoxLayout(uiCheckBoxGroupPanel, BoxLayout.PAGE_AXIS));
 
-        for (CheckBoxData checkBox : checkBoxDataList) {
+        for (CheckBoxData checkBox : checkBoxDataList)
+        {
             JPanel uiCheckBox = buildCheckBox(checkBox, listener);
             uiCheckBoxGroupPanel.add(uiCheckBox);
         }
@@ -132,7 +139,8 @@ class RuneCalculatorPanel extends PluginPanel {
         return uiCheckBoxGroupPanel;
     }
 
-    private JPanel buildCheckBox(CheckBoxData checkBoxData, ActionListener listener) {
+    private JPanel buildCheckBox(CheckBoxData checkBoxData, ActionListener listener)
+    {
         JPanel uiCheckBoxPanel = new JPanel(new BorderLayout());
         JLabel uiLabel = new JLabel(checkBoxData.label);
 
@@ -151,39 +159,46 @@ class RuneCalculatorPanel extends PluginPanel {
         return uiCheckBoxPanel;
     }
 
-    private void adjustUsableRuneSet(ActionEvent e) {
+    private void adjustUsableRuneSet(ActionEvent e)
+    {
         JCheckBox checkBox = (JCheckBox) e.getSource();
 
         @SuppressWarnings("unchecked")
         EnumSet<RuneTypes> runes = (EnumSet<RuneTypes>) checkBox.getClientProperty("runes");
 
-        if (checkBox.isSelected()) {
+        if (checkBox.isSelected())
+        {
             calc.addUsableRunes(runes);
         }
-        else {
+        else
+        {
             calc.removeUsableRunes(runes);
         }
 
         refreshUI();
     }
 
-    private void adjustInfiniteRuneSourcesSet(ActionEvent e) {
+    private void adjustInfiniteRuneSourcesSet(ActionEvent e)
+    {
         JCheckBox checkBox = (JCheckBox) e.getSource();
 
         @SuppressWarnings("unchecked")
         EnumSet<RuneTypes> runes = (EnumSet<RuneTypes>) checkBox.getClientProperty("runes");
 
-        if (checkBox.isSelected()) {
+        if (checkBox.isSelected())
+        {
             calc.addInfiniteRuneSources(runes);
         }
-        else {
+        else
+        {
             calc.removeInfiniteRuneSources(runes);
         }
 
         refreshUI();
     }
 
-    private JPanel buildSelectedSpellsArea() {
+    private JPanel buildSelectedSpellsArea()
+    {
         JPanel selectedSpellsPanel = new JPanel(new BorderLayout());
         selectedSpellsPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 0, 10));
         selectedSpellsPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
@@ -196,7 +211,8 @@ class RuneCalculatorPanel extends PluginPanel {
         selectedSpellsHeader.add(selectedSpellsLabel, BorderLayout.WEST);
 
         clearButton.setText("x");
-        clearButton.addActionListener(e -> {
+        clearButton.addActionListener(e ->
+        {
             calc.clearSelectedSpells();
             refreshUI();
         });
@@ -217,7 +233,8 @@ class RuneCalculatorPanel extends PluginPanel {
         return selectedSpellsPanel;
     }
 
-    private JButton createXButton() {
+    private JButton createXButton()
+    {
         JButton xButton = new JButton();
         xButton.setPreferredSize(new Dimension(30, 0));
         xButton.setFont(FontManager.getRunescapeBoldFont());
@@ -226,7 +243,8 @@ class RuneCalculatorPanel extends PluginPanel {
         SwingUtil.removeButtonDecorations(xButton);
         xButton.setForeground(ColorScheme.PROGRESS_ERROR_COLOR);
 
-        xButton.addMouseListener(new MouseAdapter() {
+        xButton.addMouseListener(new MouseAdapter()
+        {
             @Override
             public void mouseEntered(MouseEvent mouseEvent) {
                 xButton.setForeground(Color.PINK);
@@ -243,7 +261,8 @@ class RuneCalculatorPanel extends PluginPanel {
         return xButton;
     }
 
-    private JPanel buildNeededRunesArea() {
+    private JPanel buildNeededRunesArea()
+    {
         JPanel neededRunesPanel = new JPanel(new BorderLayout());
         neededRunesPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 0, 10));
         neededRunesPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
@@ -268,12 +287,14 @@ class RuneCalculatorPanel extends PluginPanel {
         return neededRunesPanel;
     }
 
-    private void forwardScrollWhenNoScrollbar(MouseWheelEvent e) {
+    private void forwardScrollWhenNoScrollbar(MouseWheelEvent e)
+    {
         JScrollPane scrollPane = (JScrollPane) e.getSource();
         JScrollBar scrollBar = scrollPane.getVerticalScrollBar();
         boolean scrollable = scrollBar.isVisible() && (scrollBar.getMaximum() - scrollBar.getVisibleAmount() > 0);
 
-        if (!scrollable) {
+        if (!scrollable)
+        {
             // Let the parent container handle the scroll
             scrollPane.getParent().dispatchEvent(e);
         }
@@ -293,12 +314,16 @@ class RuneCalculatorPanel extends PluginPanel {
         });
     }
 
-    private void onSearch() {
-        uiSpellSlots.forEach(slot -> {
-            if (spellSlotContainsText(slot, searchBar.getText())) {
+    private void onSearch()
+    {
+        uiSpellSlots.forEach(slot ->
+        {
+            if (spellSlotContainsText(slot, searchBar.getText()))
+            {
                 super.add(slot);
             }
-            else {
+            else
+            {
                 super.remove(slot);
             }
 
@@ -306,12 +331,15 @@ class RuneCalculatorPanel extends PluginPanel {
         });
     }
 
-    private boolean spellSlotContainsText(UISpellSlot slot, String text) {
+    private boolean spellSlotContainsText(UISpellSlot slot, String text)
+    {
         return slot.getSpellData().getSpellName().toLowerCase().contains(text.toLowerCase());
     }
 
-    private void buildSpellUIElements() {
-        for (SpellData spell : SpellData.values()) {
+    private void buildSpellUIElements()
+    {
+        for (SpellData spell : SpellData.values())
+        {
             UISpellSlot slot = new UISpellSlot(spell);
 
             // Maintain an ordered list of UISpellSlots for the search display
@@ -322,9 +350,11 @@ class RuneCalculatorPanel extends PluginPanel {
             UISpellIcon spellIcon = new UISpellIcon(spell);
             uiSpellIconMap.put(spell, spellIcon);
 
-            MouseListener adjustSpellSet = new MouseAdapter() {
+            MouseListener adjustSpellSet = new MouseAdapter()
+            {
                 @Override
-                public void mousePressed(MouseEvent e) {
+                public void mousePressed(MouseEvent e)
+                {
                     SpellSource src = (SpellSource) e.getSource();
                     calc.toggleSpell(src.getSpellData());
                     refreshUI();
@@ -336,16 +366,20 @@ class RuneCalculatorPanel extends PluginPanel {
         }
     }
 
-    private void loadRuneSprites() {
-        clientThread.invokeLater(() -> {
+    private void loadRuneSprites()
+    {
+        clientThread.invokeLater(() ->
+        {
             Iterator<RuneTypes> it = pendingRuneSprites.iterator();
 
-            while (it.hasNext()) {
+            while (it.hasNext())
+            {
                 RuneTypes rune = it.next();
 
                 BufferedImage img = itemManager.getImage(rune.getId());
 
-                if (img == null) {
+                if (img == null)
+                {
                     // Ignore the failed sprite load for now
                     continue;
                 }
@@ -357,16 +391,20 @@ class RuneCalculatorPanel extends PluginPanel {
         });
     }
 
-    private void loadAndSetSpellSprites() {
-        clientThread.invokeLater(() -> {
+    private void loadAndSetSpellSprites()
+    {
+        clientThread.invokeLater(() ->
+        {
             Iterator<SpellData> it = pendingSpellSprites.iterator();
 
-            while (it.hasNext()) {
+            while (it.hasNext())
+            {
                 SpellData spell = it.next();
 
                 BufferedImage img = spriteManager.getSprite(spell.getSpriteID(), 0);
 
-                if (img == null) {
+                if (img == null)
+                {
                     // Ignore the failed sprite load for now
                     continue;
                 }
@@ -374,12 +412,15 @@ class RuneCalculatorPanel extends PluginPanel {
                 UISpellSlot slot = uiSpellSlotMap.get(spell);
                 UISpellIcon icon = uiSpellIconMap.get(spell);
 
-                SwingUtilities.invokeLater(() -> {
-                    if (slot != null) {
+                SwingUtilities.invokeLater(() ->
+                {
+                    if (slot != null)
+                    {
                         slot.setIcon(img);
                     }
 
-                    if (icon != null) {
+                    if (icon != null)
+                    {
                         icon.setIcon(img);
                     }
                 });
@@ -390,17 +431,21 @@ class RuneCalculatorPanel extends PluginPanel {
     }
 
 
-    private void updateSpellSlotsUI() {
-        for (UISpellSlot slot : uiSpellSlots) {
+    private void updateSpellSlotsUI()
+    {
+        for (UISpellSlot slot : uiSpellSlots)
+        {
             slot.setSelected(calc.isSpellSelected(slot.getSpellData()));
         }
     }
 
-    private void updateSelectedSpellIconsUI() {
+    private void updateSelectedSpellIconsUI()
+    {
         selectedSpellIconsPanel.removeAll();
 
         EnumSet<SpellData> selectedSpells = calc.getSpellSet();
-        for (SpellData spell : selectedSpells) {
+        for (SpellData spell : selectedSpells)
+        {
             UISpellIcon icon = uiSpellIconMap.get(spell);
             selectedSpellIconsPanel.add(icon);
         }
@@ -408,31 +453,37 @@ class RuneCalculatorPanel extends PluginPanel {
         clearButton.setVisible(!selectedSpells.isEmpty());
     }
 
-    private void updateRuneSetsUI() {
+    private void updateRuneSetsUI()
+    {
         neededRunesGroups.removeAll();
 
         List<EnumSet<RuneTypes>> options = calc.getRuneSets();
 
-        if(options.isEmpty()) {
+        if(options.isEmpty())
+        {
             return;
         }
 
         int setNum = 1;
-        for (EnumSet<RuneTypes> runeSet : options) {
+        for (EnumSet<RuneTypes> runeSet : options)
+        {
             JPanel runeSetPanel = new JPanel(new BorderLayout());
             runeSetPanel.setBorder(new EmptyBorder(0, 0, 5, 0));
 
-            if (options.size() != 1) {
+            if (options.size() != 1)
+            {
                 JLabel runeSetLabel = new JLabel("Option " + setNum);
                 runeSetPanel.add(runeSetLabel, BorderLayout.NORTH);
             }
 
             JPanel runeGroupPanel = new JPanel(new GridLayout(0, GRID_COLUMNS-1, ICON_BUFFER_SIZE, ICON_BUFFER_SIZE));
 
-            for (RuneTypes rune : runeSet) {
+            for (RuneTypes rune : runeSet)
+            {
                 JLabel runeIcon = new JLabel();
                 BufferedImage icon = uiRuneIconMap.get(rune);
-                if (icon != null) {
+                if (icon != null)
+                {
                     runeIcon.setIcon(new ImageIcon(uiRuneIconMap.get(rune)));
                 }
                 runeIcon.setToolTipText(rune.toString());
@@ -447,12 +498,15 @@ class RuneCalculatorPanel extends PluginPanel {
         }
     }
 
-    private void refreshUI() {
-        if (!pendingSpellSprites.isEmpty()) {
+    private void refreshUI()
+    {
+        if (!pendingSpellSprites.isEmpty())
+        {
             loadAndSetSpellSprites();
         }
 
-        if (!pendingRuneSprites.isEmpty()) {
+        if (!pendingRuneSprites.isEmpty())
+        {
             loadRuneSprites();
         }
 

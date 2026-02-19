@@ -4,7 +4,8 @@ import lombok.Getter;
 import net.runelite.api.gameval.ItemID;
 
 @Getter
-public enum RuneTypes {
+public enum RuneTypes
+{
     AIR(ItemID.AIRRUNE, Element.AIR),
     MIND(ItemID.MINDRUNE),
     WATER(ItemID.WATERRUNE, Element.WATER),
@@ -33,27 +34,32 @@ public enum RuneTypes {
     private final int id;
     private final int mask;
 
-    RuneTypes(int id) {
+    RuneTypes(int id)
+    {
         this.id = id;
         this.mask = 0;
     }
 
-    RuneTypes(int id, Element... elements) {
+    RuneTypes(int id, Element... elements)
+    {
         this.id = id;
 
         int m = 0;
-        for (Element e : elements) {
+        for (Element e : elements)
+        {
             m |= e.mask();
         }
         this.mask = m;
     }
 
-    public boolean isElemental() {
+    public boolean isElemental()
+    {
         return mask != 0;
     }
 
     @Override
-    public String toString() {
+    public String toString()
+    {
         return this.name().isEmpty() ? this.name() : this.name().substring(0, 1).toUpperCase() + this.name().substring(1).toLowerCase();
     }
 }

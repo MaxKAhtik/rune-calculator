@@ -15,7 +15,8 @@ import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 
 @Getter
-public class UISpellSlot extends JPanel implements SpellSource {
+public class UISpellSlot extends JPanel implements SpellSource
+{
     private static final Border BORDER = new EmptyBorder(3, 12, 3, 7);
     private static final Dimension ICON_SIZE = new Dimension(32, 32);
 
@@ -26,17 +27,22 @@ public class UISpellSlot extends JPanel implements SpellSource {
     UISpellSlot(SpellData spellData) {
         this.spellData = spellData;
 
-        MouseListener hoverListener = new MouseAdapter() {
+        MouseListener hoverListener = new MouseAdapter()
+        {
             @Override
-            public void mouseEntered(MouseEvent mouseEvent) {
-                if (!isSelected) {
+            public void mouseEntered(MouseEvent mouseEvent)
+            {
+                if (!isSelected)
+                {
                     setBackground(ColorScheme.DARKER_GRAY_HOVER_COLOR);
                 }
             }
 
             @Override
-            public void mouseExited(MouseEvent mouseEvent) {
-                if (!isSelected) {
+            public void mouseExited(MouseEvent mouseEvent)
+            {
+                if (!isSelected)
+                {
                     setBackground(ColorScheme.DARKER_GRAY_COLOR);
                 }
             }
@@ -65,12 +71,14 @@ public class UISpellSlot extends JPanel implements SpellSource {
         spellIcon.setIcon(new ImageIcon(sprite));
     }
 
-    void setSelected(boolean selected) {
+    void setSelected(boolean selected)
+    {
         isSelected = selected;
         this.updateBackground();
     }
 
-    private void updateBackground() {
+    private void updateBackground()
+    {
         setBackground(this.isSelected ? ColorScheme.DARKER_GRAY_HOVER_COLOR.brighter() : ColorScheme.DARKER_GRAY_COLOR);
     }
 }
