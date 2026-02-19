@@ -107,8 +107,8 @@ class RuneCalculator extends JPanel {
     }
 
     private static final List<CheckBoxData> optionalRuneData = List.of(
-        new CheckBoxData("Include elemental combination runes", true, MIST, DUST, MUD, SMOKE, STEAM, LAVA),
-        new CheckBoxData("Include aether runes", true, AETHER),
+        new CheckBoxData("Include elemental combination runes", false, MIST, DUST, MUD, SMOKE, STEAM, LAVA),
+        new CheckBoxData("Include aether runes", false, AETHER),
         new CheckBoxData("Use sunfire runes", false, SUNFIRE)
     );
 
@@ -200,7 +200,7 @@ class RuneCalculator extends JPanel {
 
     private JPanel buildSelectedSpellsArea() {
         JPanel selectedSpellsPanel = new JPanel(new BorderLayout());
-        selectedSpellsPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        selectedSpellsPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 0, 10));
         selectedSpellsPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
         JPanel selectedSpellsHeader = new JPanel(new BorderLayout());
@@ -210,7 +210,7 @@ class RuneCalculator extends JPanel {
         selectedSpellsLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 10, 5));
         selectedSpellsHeader.add(selectedSpellsLabel, BorderLayout.WEST);
 
-        clearButton.setText("×");
+        clearButton.setText("x");
         clearButton.addActionListener(e -> {
 
             // Deselect all currently-selected spells
@@ -266,7 +266,7 @@ class RuneCalculator extends JPanel {
 
     private JPanel buildNeededRunesArea() {
         JPanel neededRunesPanel = new JPanel(new BorderLayout());
-        neededRunesPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        neededRunesPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 0, 10));
         neededRunesPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
         JLabel neededRunesLabel = new JLabel("Runes needed:");
@@ -275,7 +275,7 @@ class RuneCalculator extends JPanel {
         neededRunesPanel.add(neededRunesLabel, BorderLayout.NORTH);
 
         neededRunesGroups.setBorder(new EmptyBorder(5, 5, 5, 5));
-        neededRunesGroups.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        neededRunesGroups.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
         JScrollPane neededRunesScroll = new JScrollPane(neededRunesGroups, VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_NEVER);
         neededRunesScroll.setBorder(null);
@@ -331,6 +331,27 @@ class RuneCalculator extends JPanel {
         }
     }
 
+    private void loadRuneSprites() {
+        clientThread.invokeLater(() -> {
+            Iterator<RuneTypes> it = pendingRuneSprites.iterator();
+
+            while (it.hasNext()) {
+                RuneTypes rune = it.next();
+
+                BufferedImage img = itemManager.getImage(runeSpriteIDs.get(rune));
+
+                if (img == null) {
+                    // Ignore the failed sprite load for now
+                    continue;
+                }
+
+                uiRuneIconMap.put(rune, img);
+
+                it.remove();
+            }
+        });
+    }
+
     private void loadAndSetSpellSprites() {
         clientThread.invokeLater(() -> {
             Iterator<SpellData> it = pendingSpellSprites.iterator();
@@ -357,27 +378,6 @@ class RuneCalculator extends JPanel {
                         icon.setIcon(img);
                     }
                 });
-
-                it.remove();
-            }
-        });
-    }
-
-    private void loadRuneSprites() {
-        clientThread.invokeLater(() -> {
-            Iterator<RuneTypes> it = pendingRuneSprites.iterator();
-
-            while (it.hasNext()) {
-                RuneTypes rune = it.next();
-
-                BufferedImage img = itemManager.getImage(runeSpriteIDs.get(rune));
-
-                if (img == null) {
-                    // Ignore the failed sprite load for now
-                    continue;
-                }
-
-                uiRuneIconMap.put(rune, img);
 
                 it.remove();
             }
@@ -453,8 +453,6 @@ class RuneCalculator extends JPanel {
 
         for (SpellData spell : spellSet) {
             UISpellIcon icon = uiSpellIconMap.get(spell);
-            //TODO: remove
-            //icon.resetBackground();
             selectedSpellIconsPanel.add(icon);
         }
 
@@ -464,20 +462,28 @@ class RuneCalculator extends JPanel {
     private void updateRuneSetsUI() {
         neededRunesGroups.removeAll();
 
+        if(runeSets.isEmpty()) {
+            return;
+        }
+
         int setNum = 1;
         for (EnumSet<RuneTypes> runeSet : runeSets) {
             JPanel runeSetPanel = new JPanel(new BorderLayout());
             runeSetPanel.setBorder(new EmptyBorder(0, 0, 5, 0));
 
-            JLabel runeSetLabel = new JLabel("Option " + setNum);
-
-            runeSetPanel.add(runeSetLabel, BorderLayout.NORTH);
+            if (runeSets.size() != 1) {
+                JLabel runeSetLabel = new JLabel("Option " + setNum);
+                runeSetPanel.add(runeSetLabel, BorderLayout.NORTH);
+            }
 
             JPanel runeGroupPanel = new JPanel(new GridLayout(0, GRID_COLUMNS-1, ICON_BUFFER_SIZE, ICON_BUFFER_SIZE));
 
             for (RuneTypes rune : runeSet) {
                 JLabel runeIcon = new JLabel();
-                runeIcon.setIcon(new ImageIcon(uiRuneIconMap.get(rune)));
+                BufferedImage icon = uiRuneIconMap.get(rune);
+                if (icon != null) {
+                    runeIcon.setIcon(new ImageIcon(uiRuneIconMap.get(rune)));
+                }
                 runeIcon.setToolTipText(rune.toString());
                 runeGroupPanel.add(runeIcon);
             }
@@ -495,6 +501,10 @@ class RuneCalculator extends JPanel {
             loadAndSetSpellSprites();
         }
 
+        if (!pendingRuneSprites.isEmpty()) {
+            loadRuneSprites();
+        }
+
         updateSpellSlotsUI();
         updateSelectedSpellIconsUI();
         updateRuneSetsUI();
@@ -503,21 +513,133 @@ class RuneCalculator extends JPanel {
     }
 
     private void calculateRunes() {
-        //TODO: implement
-        //set cover algorithm
-        //with checks to all the special rune types and stuff
         runeSets.clear();
 
-        int numSets = 3;
-        for (int i = 0; i <= numSets; i++) {
-            EnumSet<RuneTypes> runeSet = EnumSet.noneOf(RuneTypes.class);
-            for (RuneTypes rune : usableRunes) {
-                if(Math.random() > 0.5f) {
-                    runeSet.add(rune);
+        EnumSet<RuneTypes> requiredRunes = EnumSet.noneOf(RuneTypes.class);
+        for (SpellData spell : spellSet) {
+            requiredRunes.addAll(spell.getRunes());
+        }
+
+        if (requiredRunes.isEmpty()) {
+            return;
+        }
+
+        if (usableRunes.contains(SUNFIRE) && requiredRunes.contains(FIRE)) {
+            requiredRunes.add(SUNFIRE);
+            requiredRunes.remove(FIRE);
+        }
+
+        if (usableRunes.contains(AETHER) && requiredRunes.contains(COSMIC) && requiredRunes.contains(SOUL)) {
+            requiredRunes.add(AETHER);
+            requiredRunes.remove(COSMIC);
+            requiredRunes.remove(SOUL);
+        }
+
+        for (RuneTypes rune : infiniteRuneSources) {
+            requiredRunes.remove(rune);
+        }
+
+        EnumSet<RuneTypes> elementalRunes = EnumSet.of(AIR, WATER, EARTH, FIRE);
+
+        EnumSet<RuneTypes> requiredElementalRunes = EnumSet.copyOf(requiredRunes);
+        requiredElementalRunes.retainAll(elementalRunes);
+
+        // If any elemental combination rune (e.g. MIST) is in usableRunes, they all are
+        if (usableRunes.contains(MIST) && !requiredElementalRunes.isEmpty()) {
+            EnumSet<RuneTypes> maskedRequiredRunes = EnumSet.copyOf(requiredRunes);
+            maskedRequiredRunes.removeAll(elementalRunes);
+
+            List<EnumSet<RuneTypes>> requiredComboRunes = calculateComboRunes(requiredElementalRunes);
+
+            for (EnumSet<RuneTypes> elementalOptions : requiredComboRunes) {
+                EnumSet<RuneTypes> combinedSet = EnumSet.copyOf(maskedRequiredRunes);
+                combinedSet.addAll(elementalOptions);
+                runeSets.add(combinedSet);
+            }
+        }
+        else {
+            runeSets.add(requiredRunes);
+        }
+    }
+
+    // Brute force the optimal cover from the 2^10 possibilities
+    private List<EnumSet<RuneTypes>> calculateComboRunes(EnumSet<RuneTypes> requiredElementalRunes) {
+        RuneTypes[] runeOptions = {
+            AIR,
+            WATER,
+            EARTH,
+            FIRE,
+            MIST,
+            DUST,
+            SMOKE,
+            MUD,
+            STEAM,
+            LAVA,
+        };
+
+        int requiredBits = toBits(requiredElementalRunes);
+
+        List<EnumSet<RuneTypes>> optimalCovers = new ArrayList<>();
+        int optimalSize = Integer.MAX_VALUE;
+        int numStates = 1 << runeOptions.length;
+
+        // Enumerate all possible covers
+        for (int state = 0; state < numStates; state++) {
+            int union = 0;
+            int count = 0;
+            int sumOfContributions = 0;
+            EnumSet<RuneTypes> cover = EnumSet.noneOf(RuneTypes.class);
+
+            // An efficient cover only uses combination runes when they reduce the cardinality of the cover
+            boolean efficientCover = true;
+
+            for (int i = 0; i < runeOptions.length; i++) {
+                if ((state & (1 << i)) != 0) {
+                    int optionMask = runeOptions[i].mask();
+                    union |= optionMask;
+                    count++;
+                    cover.add(runeOptions[i]);
+
+                    int runesContributed = optionMask & requiredBits;
+                    int numContributed = Integer.bitCount(runesContributed);
+                    sumOfContributions += numContributed;
+
+                    boolean isComboRune = Integer.bitCount(optionMask) > 1;
+
+                    if (isComboRune && numContributed < 2) {
+                        efficientCover = false;
+                        break;
+                    }
                 }
             }
-            runeSets.add(runeSet);
+
+            if (!efficientCover) {
+                continue;
+            }
+
+            int requiredContributions = Integer.bitCount(requiredBits);
+
+            if ((union & requiredBits) == requiredBits && sumOfContributions == requiredContributions) {
+                if (count < optimalSize) {
+                    optimalSize = count;
+                    optimalCovers.clear();
+                    optimalCovers.add(cover);
+                }
+                else if (count == optimalSize) {
+                    optimalCovers.add(cover);
+                }
+            }
         }
+
+        return optimalCovers;
+    }
+
+    private int toBits(EnumSet<RuneTypes> runeSet) {
+        int bits = 0;
+        for (RuneTypes rune : runeSet) {
+            bits += rune.mask();
+        }
+        return bits;
     }
 
     private void onSearch()
@@ -545,6 +667,16 @@ class RuneCalculator extends JPanel {
         StringBuilder debugMessage = new StringBuilder();
         for (SpellData spell : spellSet) {
             debugMessage.append(spell.getSpellName());
+            debugMessage.append(", ");
+        }
+        return debugMessage.toString();
+    }
+
+    //TODO: delete later
+    private String debug_runeSetToString(RuneTypes... runes) {
+        StringBuilder debugMessage = new StringBuilder();
+        for (RuneTypes rune : runes) {
+            debugMessage.append(rune.toString());
             debugMessage.append(", ");
         }
         return debugMessage.toString();
