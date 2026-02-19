@@ -1,7 +1,5 @@
 package com.runecalculator;
 
-import java.util.List;
-
 public enum RuneTypes {
     AIR(Element.AIR),
     MIND,

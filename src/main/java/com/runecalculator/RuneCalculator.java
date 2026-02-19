@@ -661,24 +661,4 @@ class RuneCalculator extends JPanel {
     {
         return slot.getSpellData().getSpellName().toLowerCase().contains(text.toLowerCase());
     }
-
-    //TODO: delete later
-    private String debug_spellSetToString() {
-        StringBuilder debugMessage = new StringBuilder();
-        for (SpellData spell : spellSet) {
-            debugMessage.append(spell.getSpellName());
-            debugMessage.append(", ");
-        }
-        return debugMessage.toString();
-    }
-
-    //TODO: delete later
-    private String debug_runeSetToString(RuneTypes... runes) {
-        StringBuilder debugMessage = new StringBuilder();
-        for (RuneTypes rune : runes) {
-            debugMessage.append(rune.toString());
-            debugMessage.append(", ");
-        }
-        return debugMessage.toString();
-    }
 }
