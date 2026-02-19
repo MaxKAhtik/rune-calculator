@@ -4,7 +4,6 @@ import com.google.inject.Provider;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
-import net.runelite.api.Client;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
@@ -23,9 +22,6 @@ import java.awt.image.BufferedImage;
 
 public class RuneCalculatorPlugin extends Plugin
 {
-	@Inject
-	private Client client;
-
 	@Inject
 	private ClientToolbar clientToolbar;
 
