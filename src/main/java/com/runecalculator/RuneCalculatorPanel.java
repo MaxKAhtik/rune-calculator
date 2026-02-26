@@ -29,7 +29,7 @@ class RuneCalculatorPanel extends PluginPanel
     private static final int BASE_SCROLL_ROWS_VISIBLE = 2;
     private static final int BASE_SCROLL_HEIGHT = BASE_SCROLL_ROWS_VISIBLE * (UISpellIcon.ICON_SIZE + ICON_BUFFER_SIZE) + 10;
 
-    private final RuneCalculator calc;
+    private final RuneCalculator runeCalculator;
     private final ClientThread clientThread;
     private final SpriteManager spriteManager;
     private final ItemManager itemManager;
@@ -37,8 +37,8 @@ class RuneCalculatorPanel extends PluginPanel
     private final Set<SpellData> pendingSpellSprites = EnumSet.allOf(SpellData.class);
     private final Set<RuneTypes> pendingRuneSprites = EnumSet.allOf(RuneTypes.class);
 
-    private final Map<SpellData, UISpellIcon> uiSpellIconMap = new HashMap<>();
     private final Map<SpellData, UISpellSlot> uiSpellSlotMap = new HashMap<>();
+    private final Map<SpellData, UISpellIcon> uiSpellIconMap = new HashMap<>();
     private final Map<RuneTypes, BufferedImage> uiRuneIconMap = new HashMap<>();
 
     private final JButton clearButton = createXButton();
@@ -50,35 +50,33 @@ class RuneCalculatorPanel extends PluginPanel
     private static final class CheckBoxData
     {
         final String label;
-        final boolean initialState;
         final EnumSet<RuneTypes> runes;
 
-        CheckBoxData(String label, boolean initialState, RuneTypes... runes)
+        CheckBoxData(String label, RuneTypes... runes)
         {
             this.label = label;
-            this.initialState =  initialState;
             this.runes = EnumSet.of(runes[0], runes);
         }
     }
 
-    private static final List<CheckBoxData> optionalRuneData = List.of(
-        new CheckBoxData("Include elemental combination runes", false, MIST, DUST, MUD, SMOKE, STEAM, LAVA),
-        new CheckBoxData("Include aether runes", false, AETHER),
-        new CheckBoxData("Use sunfire runes", false, SUNFIRE)
+    private static final List<CheckBoxData> OPTIONAL_RUNE_DATA = List.of(
+        new CheckBoxData("Include elemental combination runes", MIST, DUST, MUD, SMOKE, STEAM, LAVA),
+        new CheckBoxData("Include aether runes", AETHER),
+        new CheckBoxData("Use sunfire runes", SUNFIRE)
     );
 
-    private static final List<CheckBoxData> infiniteRuneData = List.of(
-        new CheckBoxData("Infinite source of air runes", false, AIR),
-        new CheckBoxData("Infinite source of water runes", false, WATER),
-        new CheckBoxData("Infinite source of earth runes", false, EARTH),
-        new CheckBoxData("Infinite source of fire runes", false, FIRE)
+    private static final List<CheckBoxData> INFINITE_RUNE_DATA = List.of(
+        new CheckBoxData("Infinite source of air runes", AIR),
+        new CheckBoxData("Infinite source of water runes", WATER),
+        new CheckBoxData("Infinite source of earth runes", EARTH),
+        new CheckBoxData("Infinite source of fire runes", FIRE)
     );
 
     @Inject
     RuneCalculatorPanel(RuneCalculator calculator, ClientThread clientThread, SpriteManager spriteManager, ItemManager itemManager)
     {
         super();
-        this.calc = calculator;
+        this.runeCalculator = calculator;
         this.clientThread = clientThread;
         this.spriteManager = spriteManager;
         this.itemManager = itemManager;
@@ -113,13 +111,13 @@ class RuneCalculatorPanel extends PluginPanel
         JPanel uiCheckBoxesPanel = new JPanel();
         uiCheckBoxesPanel.setLayout(new BoxLayout(uiCheckBoxesPanel, BoxLayout.PAGE_AXIS));
 
-        JPanel checkBoxGroup1 = buildCheckBoxGroup(optionalRuneData, this::adjustUsableRuneSet);
+        JPanel checkBoxGroup1 = buildCheckBoxGroup(OPTIONAL_RUNE_DATA, this::adjustUsableRuneSet);
         uiCheckBoxesPanel.add(checkBoxGroup1);
 
         // Visually separate the checkbox groups
         uiCheckBoxesPanel.add(new JSeparator(JSeparator.HORIZONTAL));
 
-        JPanel checkBoxGroup2 = buildCheckBoxGroup(infiniteRuneData, this::adjustInfiniteRuneSourcesSet);
+        JPanel checkBoxGroup2 = buildCheckBoxGroup(INFINITE_RUNE_DATA, this::adjustInfiniteRuneSourcesSet);
         uiCheckBoxesPanel.add(checkBoxGroup2);
 
         return uiCheckBoxesPanel;
@@ -144,7 +142,7 @@ class RuneCalculatorPanel extends PluginPanel
         JPanel uiCheckBoxPanel = new JPanel(new BorderLayout());
         JLabel uiLabel = new JLabel(checkBoxData.label);
 
-        JCheckBox uiCheckBox = new JCheckBox("", checkBoxData.initialState);
+        JCheckBox uiCheckBox = new JCheckBox("", false);
         uiCheckBox.putClientProperty("runes", checkBoxData.runes);
         uiCheckBox.addActionListener(listener);
 
@@ -168,11 +166,11 @@ class RuneCalculatorPanel extends PluginPanel
 
         if (checkBox.isSelected())
         {
-            calc.addUsableRunes(runes);
+            runeCalculator.addUsableRunes(runes);
         }
         else
         {
-            calc.removeUsableRunes(runes);
+            runeCalculator.removeUsableRunes(runes);
         }
 
         refreshUI();
@@ -187,11 +185,11 @@ class RuneCalculatorPanel extends PluginPanel
 
         if (checkBox.isSelected())
         {
-            calc.addInfiniteRuneSources(runes);
+            runeCalculator.addInfiniteRuneSources(runes);
         }
         else
         {
-            calc.removeInfiniteRuneSources(runes);
+            runeCalculator.removeInfiniteRuneSources(runes);
         }
 
         refreshUI();
@@ -213,7 +211,7 @@ class RuneCalculatorPanel extends PluginPanel
         clearButton.setText("x");
         clearButton.addActionListener(e ->
         {
-            calc.clearSelectedSpells();
+            runeCalculator.clearSelectedSpells();
             refreshUI();
         });
 
@@ -306,9 +304,11 @@ class RuneCalculatorPanel extends PluginPanel
         searchBar.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         searchBar.setHoverBackgroundColor(ColorScheme.DARK_GRAY_HOVER_COLOR);
         searchBar.addClearListener(this::onSearch);
-        searchBar.addKeyListener(new KeyAdapter() {
+        searchBar.addKeyListener(new KeyAdapter()
+        {
             @Override
-            public void keyTyped(KeyEvent e) {
+            public void keyTyped(KeyEvent e)
+            {
                 onSearch();
             }
         });
@@ -356,7 +356,7 @@ class RuneCalculatorPanel extends PluginPanel
                 public void mousePressed(MouseEvent e)
                 {
                     SpellSource src = (SpellSource) e.getSource();
-                    calc.toggleSpell(src.getSpellData());
+                    runeCalculator.toggleSpell(src.getSpellData());
                     refreshUI();
                 }
             };
@@ -435,7 +435,7 @@ class RuneCalculatorPanel extends PluginPanel
     {
         for (UISpellSlot slot : uiSpellSlots)
         {
-            slot.setSelected(calc.isSpellSelected(slot.getSpellData()));
+            slot.setSelected(runeCalculator.isSpellSelected(slot.getSpellData()));
         }
     }
 
@@ -443,7 +443,7 @@ class RuneCalculatorPanel extends PluginPanel
     {
         selectedSpellIconsPanel.removeAll();
 
-        EnumSet<SpellData> selectedSpells = calc.getSpellSet();
+        EnumSet<SpellData> selectedSpells = runeCalculator.getSpellSet();
         for (SpellData spell : selectedSpells)
         {
             UISpellIcon icon = uiSpellIconMap.get(spell);
@@ -457,7 +457,7 @@ class RuneCalculatorPanel extends PluginPanel
     {
         neededRunesGroups.removeAll();
 
-        List<EnumSet<RuneTypes>> options = calc.getRuneSets();
+        List<EnumSet<RuneTypes>> options = runeCalculator.getRuneSets();
 
         if(options.isEmpty())
         {

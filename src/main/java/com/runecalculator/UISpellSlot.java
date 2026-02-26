@@ -24,7 +24,8 @@ public class UISpellSlot extends JPanel implements SpellSource
     private final JLabel spellIcon = new JLabel();
     private boolean isSelected = false;
 
-    UISpellSlot(SpellData spellData) {
+    UISpellSlot(SpellData spellData)
+    {
         this.spellData = spellData;
 
         MouseListener hoverListener = new MouseAdapter()
@@ -67,9 +68,7 @@ public class UISpellSlot extends JPanel implements SpellSource
         add(uiSpellName, BorderLayout.CENTER);
     }
 
-    public void setIcon(BufferedImage sprite) {
-        spellIcon.setIcon(new ImageIcon(sprite));
-    }
+    public void setIcon(BufferedImage sprite) { spellIcon.setIcon(new ImageIcon(sprite)); }
 
     void setSelected(boolean selected)
     {

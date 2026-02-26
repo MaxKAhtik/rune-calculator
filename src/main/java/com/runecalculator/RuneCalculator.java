@@ -1,5 +1,6 @@
 package com.runecalculator;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Inject;
@@ -30,13 +31,24 @@ class RuneCalculator extends JPanel
         WRATH
     );
 
+    private static final EnumSet<RuneTypes> ELEMENTAL_RUNES = EnumSet.of(
+        AIR,
+        WATER,
+        EARTH,
+        FIRE
+    );
+
     private static final RuneTypes[] ELEMENTAL_OPTIONS = Arrays.stream(RuneTypes.values())
         .filter(RuneTypes::isElemental)
         .toArray(RuneTypes[]::new);
 
     private final EnumSet<RuneTypes> usableRunes;
     private final EnumSet<RuneTypes> infiniteRuneSources;
+
+    @Getter
     private final EnumSet<SpellData> spellSet = EnumSet.noneOf(SpellData.class);
+
+    @Getter
     private final List<EnumSet<RuneTypes>> runeSets = new ArrayList<>();
 
     @Inject
@@ -44,16 +56,6 @@ class RuneCalculator extends JPanel
     {
         usableRunes = EnumSet.copyOf(INITIAL_USABLE_RUNES);
         infiniteRuneSources = EnumSet.noneOf(RuneTypes.class);
-    }
-
-    public EnumSet<SpellData> getSpellSet()
-    {
-        return spellSet;
-    }
-
-    public List<EnumSet<RuneTypes>> getRuneSets()
-    {
-        return runeSets;
     }
 
     public void addUsableRunes(EnumSet<RuneTypes> runes)
@@ -116,15 +118,15 @@ class RuneCalculator extends JPanel
     {
         runeSets.clear();
 
+        if (spellSet.isEmpty())
+        {
+            return;
+        }
+
         EnumSet<RuneTypes> requiredRunes = EnumSet.noneOf(RuneTypes.class);
         for (SpellData spell : spellSet)
         {
             requiredRunes.addAll(spell.getRunes());
-        }
-
-        if (requiredRunes.isEmpty())
-        {
-            return;
         }
 
         if (usableRunes.contains(SUNFIRE) && requiredRunes.contains(FIRE))
@@ -145,15 +147,14 @@ class RuneCalculator extends JPanel
             requiredRunes.remove(rune);
         }
 
-        EnumSet<RuneTypes> elementalRunes = EnumSet.of(AIR, WATER, EARTH, FIRE);
         EnumSet<RuneTypes> requiredElementalRunes = EnumSet.copyOf(requiredRunes);
-        requiredElementalRunes.retainAll(elementalRunes);
+        requiredElementalRunes.retainAll(ELEMENTAL_RUNES);
 
         // If any elemental combination rune (e.g. MIST) is in usableRunes, they all are
         if (usableRunes.contains(MIST) && !requiredElementalRunes.isEmpty())
         {
             EnumSet<RuneTypes> maskedRequiredRunes = EnumSet.copyOf(requiredRunes);
-            maskedRequiredRunes.removeAll(elementalRunes);
+            maskedRequiredRunes.removeAll(ELEMENTAL_RUNES);
 
             List<EnumSet<RuneTypes>> requiredComboRunes = calculateComboRunes(requiredElementalRunes);
 
