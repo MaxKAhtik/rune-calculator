@@ -16,8 +16,7 @@ import java.awt.image.BufferedImage;
 @PluginDescriptor(
 	name = "Rune Calculator",
 	description = "Calculates what rune types are necessary to cast the selected spells.",
-	tags = {"runes", "magic", "spell", "rune pouch", "calculator"},
-	enabledByDefault = false
+	tags = {"runes", "magic", "spell", "rune pouch", "calculator"}
 )
 
 public class RuneCalculatorPlugin extends Plugin
